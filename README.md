@@ -3,7 +3,9 @@
 
 Offical implementation of Bidirectional Trained Tree-Structured Decoder for Handwritten Mathematical Expression Recognition
 
-Under construction 
+Under construction
+
+We will provide all code as soon as the paper is accepted.
 
 
 
