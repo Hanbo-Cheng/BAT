@@ -20,14 +20,6 @@ class Decoder_L2R(nn.Module):
         self.object_attention = CoverageAttention(params)
         self.object_probility = ObjectProbility(params)
         self.object_hidden_attention = Hidden_state_Attention(params)
-
-
-        # self.ct_hidden_ch_fc_1 = nn.Linear(params['n'], 2 * params['n']) 
-        # self.ct_hidden_ch_fc_2 = nn.Linear(2 * params['n'], params['n']) 
-
-        # self.ct_hidden_re_fc_1 = nn.Linear(params['n'], 2 * params['n']) 
-        # self.ct_hidden_re_fc_2 = nn.Linear(2 * params['n'], params['n']) 
-
         
         self.fc_key_R2L_hidden_ch = nn.Linear(params['n'], params['dim_attention'])  # 两个FC，用于处理hidden state 得到key
         self.fc_key_R2L_hidden_re = nn.Linear(params['n'], params['dim_attention'])
@@ -48,6 +40,7 @@ class Decoder_L2R(nn.Module):
                 P_res, init_state, length, R2L_hidden_ch, R2L_hidden_re, R2L_hidden_mask):
         #print(P_ys)
         ht = init_state
+        ht_lm = init_state
         ht_relation = init_state
         B, H, W = ctx_mask.shape
         r2l_maxlen = R2L_hidden_ch.shape[0]
@@ -57,6 +50,7 @@ class Decoder_L2R(nn.Module):
         hidden_attention_past_re = torch.zeros(B, 1, r2l_maxlen).cuda()
         hidden_attention_ch = torch.zeros(length, B, r2l_maxlen).cuda()
         predict_childs = torch.zeros(length, B, self.param_K).cuda()
+        predict_childs_lm = torch.zeros(length, B, self.param_K).cuda()
         predict_childs_pix = torch.zeros(length, B, self.param_K).cuda()
         predict_relations = torch.zeros(length, B, self.param_Kre).cuda()
 
@@ -69,8 +63,8 @@ class Decoder_L2R(nn.Module):
 
         predict_features = self.get_predicts(ctx_val) #(Batch, H, W, k)
         for i in range(length):
-            predict_childs[i], ht, attention, attention_hidden, ct = self.get_child(ctx_val, ctx_key_object, ctx_mask, 
-                attention_past, hidden_attention_past_ch, P_ys[i], P_y_masks[i], P_res[i], ht, R2L_hidden_ch, R2L_hidden_key_ch, R2L_hidden_mask) # 增加了输入R2L的V与K
+            predict_childs[i], predict_childs_lm[i], ht, ht_lm, attention, attention_hidden, ct = self.get_child(ctx_val, ctx_key_object, ctx_mask, 
+                attention_past, hidden_attention_past_ch, P_ys[i], P_y_masks[i], P_res[i], ht, ht_lm, R2L_hidden_ch, R2L_hidden_key_ch, R2L_hidden_mask) # 增加了输入R2L的V与K
             attention_past = attention[:, None, :, :] + attention_past
             hidden_attention_past_ch = attention_hidden[:, None, :] + hidden_attention_past_ch
             hidden_attention_ch[i] = attention_hidden
@@ -79,7 +73,7 @@ class Decoder_L2R(nn.Module):
             predict_relations[i], ht_relation, hidden_attention_re = self.get_relation(ctx_val, ctx_key_relation, 
                 ctx_mask, C_ys[i], ht_relation, ct, R2L_hidden_re, R2L_hidden_key_re, R2L_hidden_mask, hidden_attention_past_re) # 增加了输入R2L的V与K
             hidden_attention_past_re = hidden_attention_re[:, None, :] + hidden_attention_past_re   
-        return predict_childs, predict_relations, predict_childs_pix, hidden_attention_ch
+        return predict_childs, predict_childs_lm, predict_relations, predict_childs_pix, hidden_attention_ch
 
     def get_predicts(self, ctx_val):
         predict_features = self.fc_ct(ctx_val.permute(0, 2, 3, 1)) #(Batch, H, W, D) --> (Batch, H, W, m)
@@ -92,7 +86,7 @@ class Decoder_L2R(nn.Module):
         predict_features = F.softmax(predict_features, dim=3) #(Batch, H, W, k)
         return predict_features
 
-    def get_child(self, ctx_val, ctx_key, ctx_mask, attention_past, hidden_attention_past, p_y, p_y_mask, p_re, ht, R2L_hidden_ch, R2L_hidden_key_ch, R2L_hidden_mask):
+    def get_child(self, ctx_val, ctx_key, ctx_mask, attention_past, hidden_attention_past, p_y, p_y_mask, p_re, ht, ht_lm, R2L_hidden_ch, R2L_hidden_key_ch, R2L_hidden_mask):
         # print(p_y)
         # print(p_y.dtype)
         p_y = self.object_embedding(p_y)
@@ -100,23 +94,26 @@ class Decoder_L2R(nn.Module):
         p = torch.cat([p_y, p_re], dim=1)
         ht_hat = self.gru00(p, ht)  #att_query
         ht_hat = p_y_mask[:, None] * ht_hat + (1. - p_y_mask)[:, None] * ht
-        ct_hidden, attention_hidden = self.object_hidden_attention(R2L_hidden_ch, R2L_hidden_key_ch, R2L_hidden_mask, hidden_attention_past,ht_hat)
-        # ct_hidden = torch.zeros_like(ct_hidden).cuda()
-        # ct_hidden = self.ct_hidden_ch_fc_1(ct_hidden)
-        # ct_hidden = self.ct_hidden_ch_fc_2(ct_hidden)
-        # ht_hat = ct_hidden + ht_hat
-        ct, attention = self.object_attention(ctx_val, ctx_key, ctx_mask, attention_past, ht_hat)
-        # mask #len b
-        
-        # TODO: 这里需要尝试不同的context 融合方法结果上的差异
 
-        # ct_new = torch.concat((ct,ct_hidden), dim= -1)
+        ct_hidden, attention_hidden = self.object_hidden_attention(R2L_hidden_ch, R2L_hidden_key_ch, R2L_hidden_mask, hidden_attention_past,ht_hat_lm)
+        ct, attention = self.object_attention(ctx_val, ctx_key, ctx_mask, attention_past, ht_hat)
+
+        # for language modeling 
+        ht_hat_lm = self.gru00(p, ht_lm)
+        ht_hat_lm = p_y_mask[:, None] * ht_hat_lm + (1. - p_y_mask)[:, None] * ht_lm
+
+        # for language modeling 
+        ct_zero = torch.zeros_like(ct)
+        ht_lm = self.gru01(ct_zero, ht_hat_lm)
+        ht_lm = p_y_mask[:, None] * ht_lm + (1. - p_y_mask)[:, None] * ht_hat_lm
+
         ht = self.gru01(ct, ht_hat)
         ht = p_y_mask[:, None] * ht + (1. - p_y_mask)[:, None] * ht_hat
 
         predict_child = self.object_probility(ct, ht, p_y, p_re, ct_hidden)
+        predict_child_lm = self.object_probility(ct_zero, ht_lm, p_y, p_re, ct_hidden)
 
-        return predict_child, ht, attention, attention_hidden.permute(1,0), ct
+        return predict_child, predict_child_lm, predict_child_lm, ht, ht_lm, attention, attention_hidden.permute(1,0), ct
     
     def get_relation(self, ctx_val, ctx_key, ctx_mask, c_y, ht, ct, R2L_hidden_re, R2L_hidden_key_re, R2L_hidden_mask, hidden_attention_past_re):
         c_y = self.object_embedding(c_y)

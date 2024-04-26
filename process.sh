@@ -1,0 +1,1 @@
+python ./dataprocess/process_tree_label.py ./CROHME  ## your data path

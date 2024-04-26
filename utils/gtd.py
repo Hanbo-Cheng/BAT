@@ -520,10 +520,9 @@ def latex2gtd(cap):
         return ('error2*2')
         pass
 
-def save_gtd_label():
+def save_gtd_label(bfs1_path):
 
-    bfs1_path = 'CROHME/'
-    gtd_root_path = ''
+    # bfs1_path = 'CROHME/'
     gtd_paths = ['train_chb','14_chb_test','16_chb_test','19_chb_test']
 
     for gtd_path in gtd_paths:
@@ -549,13 +548,13 @@ def save_gtd_label():
         print ('process files number ', process_num)
 
         pkl.dump(label_lines, out_label_fp)
-        print ('save file done')
+        print (f'save file done, location: {outpkl_label_file}')
         out_label_fp.close()
 
-def save_gtd_bidirecion_label():
+def save_gtd_bidirecion_label(bfs1_path):
 
-    bfs1_path = 'CROHME/'
-    gtd_root_path = ''
+    # bfs1_path = 'CROHME/'
+    # gtd_root_path = ''
     gtd_paths = ['train_chb','14_chb_test','16_chb_test','19_chb_test']
 
     from utils import load_dict
@@ -586,11 +585,11 @@ def save_gtd_bidirecion_label():
         print ('process files number ', process_num)
 
         pkl.dump(label_lines, out_label_fp)
-        print ('save file done')
+        print (f'save file done, location: {outpkl_label_file}')
         out_label_fp.close()
-def save_gtd_align():
+def save_gtd_align(bfs1_path):
 
-    bfs1_path = 'CROHME/'
+    # bfs1_path = 'CROHME/'
     gtd_root_path = ''
     gtd_paths = ['train_chb','14_chb_test','16_chb_test','19_chb_test']
 
@@ -617,12 +616,12 @@ def save_gtd_align():
         print ('process files number ', process_num)
 
         pkl.dump(label_aligns, out_label_fp)
-        print ('save file done')
+        print (f'save file done, location: {outpkl_label_file}')
         out_label_fp.close() 
 
-def save_gtd_bidirection_align():
+def save_gtd_bidirection_align(bfs1_path):
 
-    bfs1_path = 'CROHME/'
+    # bfs1_path = 'CROHME/'
     gtd_root_path = ''
     gtd_paths = ['train_chb','14_chb_test','16_chb_test','19_chb_test']
 
@@ -651,7 +650,7 @@ def save_gtd_bidirection_align():
         print ('process files number ', process_num)
 
         pkl.dump(label_aligns, out_label_fp)
-        print ('save file done')
+        print (f'save file done, location: {outpkl_label_file}')
         out_label_fp.close() 
 
 def reverse(gtd):
@@ -967,47 +966,6 @@ if __name__ == '__main__':
     print(gtd)
     reverse = gtd2latex(gtd[:-1])
     print(reverse)
-    # # gtd = latex2gtd(reverse)
-    # # print(gtd2latex(gtd))
-    # # gtd = reverse_ver_3(gtd, dict)
-    # # gtd = re_id(gtd)
-    # # # gtd = latex2gtd(latex)
-    # print(gtd)
-    # gtd = re_id(gtd)
-    # rev_latex = gtd2latex(gtd)
-    # print(rev_latex)
-    
-    # print(rev_latex)
-    # rev_gtd = latex2gtd(rev_latex)
-    # print(rev_gtd)
-    # t = gen_gtd_relation_align(gtd, dict)
-    # print(t)
-    # gtd = reverse_ver_3(rev_gtd, dict)
-    # print(gtd)
-    # print(gtd2latex(gtd))
-    # res = gtd2latex(gtd)
-    # latex_reverse = gtd2latex(gtd_reverse)
-    # print(t)
-
-    # print(latex_reverse)
-    # for item in gtd:
-    #     print('\t\t'.join(item))
-    # print('\n')
-
-    # # print("reversed target: ")
-    # # latext2 = '\\frac { y + x  } { w + z } + \\sqrt [ c ] { b } = a'
-    # # gtd1 = latex2gtd(latext2)
-    # # for item in gtd1:
-    # #     print('\t\t'.join(item))
-
-
-    # # latex ='\\sqrt [ c + d ] { b } + \\frac { y + x  } { w + z } = a'
-    # # gtd = latex2gtd(latex)
-    # # for item in gtd:
-    # #     print('\t\t'.join(item))
-
-    # print('\n')
-    
     # # print(len(gtd)+1)
     # new_gtd = reverse_ver_3(copy.deepcopy(gtd),dict)
     # new_gtd = reverse_ver_3(copy.deepcopy(new_gtd))
