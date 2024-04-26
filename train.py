@@ -9,7 +9,7 @@ from torch.cuda.amp import autocast as autocast
 from torch import optim, nn
 from utils.utils import setup_seed,load_dict, prepare_bidirection_data, gen_sample, weight_init, compute_wer, compute_sacc, cmp_result,prepare_data
 from utils.utils import update_lr as update_lr
-from model.encoder_decoder_asyn_hard_attention_focal_ct_concat import Encoder_Decoder_Bi_Asyn as Encoder_Decoder
+from model.encoder_decoder_asyn_hard_attention_focal_ct_concat_lm import Encoder_Decoder_Bi_Asyn as Encoder_Decoder
 from utils.data_iterator import dataIterator, BatchBucket
 from utils.gtd import gtd2latex, relation2tree, latex2gtd
 import copy

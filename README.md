@@ -7,6 +7,10 @@ Under construction
 
 We will provide all code as soon as the paper is accepted.
 
+  - [x]  prepare the data preprocessing script (2024.4.26)
+  - [x]  prepare fore the model and training code (2024.4.26)
+  - [ ]  upload the raw data
+  - [ ]  upload the processed data
 
 
 </p>
